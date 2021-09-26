@@ -78,7 +78,8 @@ models = {
     'ssd-lite_mobilenetv2_fpn': {'model_url': 'https://git.ti.com/cgit/jacinto-ai/jacinto-ai-modelzoo/plain/models/vision/detection/coco/edgeai-mmdet/ssd-lite_mobilenetv2_fpn_512x512_20201110_model.onnx', 'dir': '../testvecs/models/public/onnx/', 
                                       'model_prototxt' : 'https://git.ti.com/cgit/jacinto-ai/jacinto-ai-modelzoo/plain/models/vision/detection/coco/edgeai-mmdet/ssd-lite_mobilenetv2_fpn_512x512_20201110_model.prototxt'},
 }
-def download(mpath, model_name, suffix, type):
+
+def download(mpath, model_name, suffix, type, proxies = None):
     headers = {
     'User-Agent': 'My User Agent 1.0',
     'From': 'aid@ti.com'  # This is another valid field
@@ -89,10 +90,10 @@ def download(mpath, model_name, suffix, type):
         if(type in models[model_name].keys()):
             print("Downloading  ", model_file_name)
             url = models[model_name][type]
-            r = requests.get(url, allow_redirects=True, headers=headers)
+            r = requests.get(url, allow_redirects=True, headers=headers, proxies=proxies)
             open(model_path, 'wb').write(r.content)
             
-def download_models(mpath = models_base_path):
+def download_models(mpath = models_base_path, proxies = None):
      # Check whether the specified path exists or not
     isExist = os.path.exists(mpath)
     if not isExist:
@@ -100,8 +101,8 @@ def download_models(mpath = models_base_path):
         os.makedirs(mpath)
 
     for model_name in models:
-        download(mpath, model_name, '.onnx', 'model_url')
-        download(mpath, model_name, '.prototxt', 'model_prototxt')
+        download(mpath, model_name, '.onnx', 'model_url', proxies = proxies)
+        download(mpath, model_name, '.prototxt', 'model_prototxt', proxies = proxies)
     #run shape inference
     for model_name in models:
         model_file_name = model_name + '.onnx'
@@ -171,22 +172,22 @@ def YUV2RGB( yuv ):
 
     return rgb
 def seg_mask_overlay(output_data, org_image_rgb):
-  classes = ''
-  output_data = np.squeeze(output_data)
-  if (output_data.ndim > 2) :
-    output_data = output_data.argmax(axis=2)
-  output_data = np.squeeze(output_data)
-  mask_image_rgb  = mask_transform(output_data) 
-  org_image  = RGB2YUV(org_image_rgb)
-  mask_image = RGB2YUV(mask_image_rgb)
-  
-  org_image[:,:, 1] = mask_image[:,:, 1]
-  org_image[:,:, 2] = mask_image[:,:, 2]
-  blend_image = YUV2RGB(org_image)
-  blend_image = blend_image.astype(np.uint8)
-  blend_image = Image.fromarray(blend_image).convert('RGB')
-  
-  return(classes, blend_image)
+    classes = ''
+    output_data = np.squeeze(output_data)
+    if (output_data.ndim > 2) :
+        output_data = output_data.argmax(axis=2)
+    output_data = np.squeeze(output_data)
+    mask_image_rgb  = mask_transform(output_data) 
+    org_image  = RGB2YUV(org_image_rgb)
+    mask_image = RGB2YUV(mask_image_rgb)
+
+    org_image[:,:, 1] = mask_image[:,:, 1]
+    org_image[:,:, 2] = mask_image[:,:, 2]
+    blend_image = YUV2RGB(org_image)
+    blend_image = blend_image.astype(np.uint8)
+    blend_image = Image.fromarray(blend_image).convert('RGB')
+
+    return(classes, blend_image)
 
 def det_box_overlay(outputs, org_image_rgb, disable_offload, od_type, framework):
     classes = ''

@@ -13,6 +13,7 @@ import platform
 parser = argparse.ArgumentParser()
 parser.add_argument('-c','--compile', action='store_true', help='Run in Model compilation mode')
 parser.add_argument('-d','--disable_offload', action='store_true',  help='Disable offload to TIDL')
+parser.add_argument('-p','--proxy', help='Proxy: socks5://host:port')
 args = parser.parse_args()
 os.environ["TIDL_RT_PERFSTATS"] = "1"
 
@@ -30,6 +31,14 @@ else:
 idx = 0
 nthreads = 0
 run_count = 0
+
+proxy = args.proxy.replace("socks5", "socks5h")
+proxies = None
+if proxy:
+    proxies = {
+        "http": proxy,
+        "https": proxy,
+    }
 
 
 def get_benchmark_output(interpreter):
@@ -170,7 +179,7 @@ def run_model(model, mIdx):
 #models = mlperf_models_configs.keys()
 models = ['mobilenet_v1_1.0_224', 'deeplabv3_mnv2_ade20k_float', 'ssd_mobilenet_v2_300_float']
 if platform.machine() != 'aarch64':
-    download_models()
+    download_models(proxies = proxies)
 #models = ['efficientdet-ti-lite0_k5s1_k3s2']
 #models = ['mobilenet_v1_1.0_224', 'ssd_mobilenet_v2_300_float']
 

@@ -8,14 +8,22 @@ parser.add_argument('--num_bits', dest='num_bits', default=8, choices=[8, 16, 32
 parser.add_argument('--num_subgraphs', dest='num_subgraphs_max', default=16, type=int, help='maximum number of TIDL subgraphs for offload (actual number of subgraphs may be less that this)')
 parser.add_argument('--pc-inference', dest='device', action='store_false', help='compile for inference on PC')
 parser.add_argument('--num_calib_images', dest='calib_iters', default=4, type=int, help='number of images to use for calibration')
+parser.add_argument('-p','--proxy', help='Proxy: socks5://host:port')
 args = parser.parse_args()
 
 models = {
     'inception_v3.tflite' : {'url':'https://tfhub.dev/tensorflow/lite-model/inception_v3/1/default/1?lite-format=tflite', 'dir':'../../../models/public/tflite/'},
 }
 
+proxies = None
+if proxy:
+    proxies = {
+        "http": proxy,
+        "https": proxy,
+    }
+
 models_base_path = '../../../models/public/tflite/'
-download_models(models_base_path, models)
+download_models(models_base_path, models, proxies = proxies)
 
 # model specifics
 model_path = os.path.join(models_base_path, 'inception_v3.tflite')

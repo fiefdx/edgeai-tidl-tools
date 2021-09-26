@@ -13,6 +13,7 @@ import platform
 parser = argparse.ArgumentParser()
 parser.add_argument('-c','--compile', action='store_true', help='Run in Model compilation mode')
 parser.add_argument('-d','--disable_offload', action='store_true',  help='Disable offload to TIDL')
+parser.add_argument('-p','--proxy', help='Proxy: socks5://host:port')
 args = parser.parse_args()
 os.environ["TIDL_RT_PERFSTATS"] = "1"
 
@@ -37,6 +38,13 @@ idx = 0
 nthreads = 0
 run_count = 0
 
+proxy = args.proxy.replace("socks5", "socks5h")
+proxies = None
+if proxy:
+    proxies = {
+        "http": proxy,
+        "https": proxy,
+    }
 
 def get_benchmark_output(interpreter):
     benchmark_dict = interpreter.get_TI_benchmark_data()
@@ -59,32 +67,32 @@ def get_benchmark_output(interpreter):
 
 
 def infer_image(sess, image_file, config):
-  input_details = sess.get_inputs()
-  input_name = input_details[0].name
-  floating_model = (input_details[0].type == 'tensor(float)')
-  height = input_details[0].shape[2]
-  width  = input_details[0].shape[3]
-  img    = Image.open(image_file).convert('RGB').resize((width, height))
-  #img    = Image.open(image_file).convert('RGB').resize((416,416))
-  input_data = np.expand_dims(img, axis=0)
-  input_data = np.transpose(input_data, (0, 3, 1, 2))
+    input_details = sess.get_inputs()
+    input_name = input_details[0].name
+    floating_model = (input_details[0].type == 'tensor(float)')
+    height = input_details[0].shape[2]
+    width  = input_details[0].shape[3]
+    img    = Image.open(image_file).convert('RGB').resize((width, height))
+    #img    = Image.open(image_file).convert('RGB').resize((416,416))
+    input_data = np.expand_dims(img, axis=0)
+    input_data = np.transpose(input_data, (0, 3, 1, 2))
 
-  if floating_model:
-    input_data = np.float32(input_data)
-    for mean, scale, ch in zip(config['mean'], config['std'], range(input_data.shape[1])):
-        input_data[:,ch,:,:] = ((input_data[:,ch,:,:]- mean) * scale)
+    if floating_model:
+        input_data = np.float32(input_data)
+        for mean, scale, ch in zip(config['mean'], config['std'], range(input_data.shape[1])):
+            input_data[:,ch,:,:] = ((input_data[:,ch,:,:]- mean) * scale)
   
-  start_time = time.time()
-  output = list(sess.run(None, {input_name: input_data}))
-  #output = list(sess.run(None, {input_name: input_data, input_details[1].name: np.array([[416,416]], dtype = np.float32)}))
+    start_time = time.time()
+    output = list(sess.run(None, {input_name: input_data}))
+    #output = list(sess.run(None, {input_name: input_data, input_details[1].name: np.array([[416,416]], dtype = np.float32)}))
+  
+    stop_time = time.time()
+    infer_time = stop_time - start_time
+  
+    copy_time, sub_graphs_proc_time, totaltime = get_benchmark_output(sess)
+    proc_time = totaltime - copy_time
 
-  stop_time = time.time()
-  infer_time = stop_time - start_time
-
-  copy_time, sub_graphs_proc_time, totaltime = get_benchmark_output(sess)
-  proc_time = totaltime - copy_time
-
-  return img, output, proc_time, sub_graphs_proc_time
+    return img, output, proc_time, sub_graphs_proc_time
 
 def run_model(model, mIdx):
     print("\nRunning_Model : ", model, " \n")
@@ -180,7 +188,7 @@ def run_model(model, mIdx):
 
 models = ['resnet18-v1', 'deeplabv3lite_mobilenetv2', 'ssd-lite_mobilenetv2_fpn']
 if platform.machine() != 'aarch64':
-    download_models()
+    download_models(proxies = proxies)
 
 log = f'\nRunning {len(models)} Models - {models}\n'
 print(log)

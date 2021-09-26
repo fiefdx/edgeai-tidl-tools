@@ -1,5 +1,6 @@
 #!/bin/bash
 CURDIR=`pwd`
+SOCKS_PROXY=`cat ./configuration.json | python -c "import sys, json; print(json.loads(sys.stdin.read())['proxy'])"`
 arch=$(uname -p)
 if [[ $arch == x86_64 ]]; then
     echo "X64 Architecture"
@@ -14,20 +15,20 @@ fi
 
 cd $CURDIR/examples/osrt_python/tfl
 if [[ $arch == x86_64 ]]; then
-python3 tflrt_delegate.py -c
+python3 tflrt_delegate.py -c -p "$SOCKS_PROXY"
 fi
 python3 tflrt_delegate.py
 cd $CURDIR/examples/osrt_python/ort
 if [[ $arch == x86_64 ]]; then
-python3 onnxrt_ep.py -c
+python3 onnxrt_ep.py -c -p "$SOCKS_PROXY"
 fi
 python3 onnxrt_ep.py
 cd $CURDIR/examples/osrt_python/tvm_dlr
 if [[ $arch == x86_64 ]]; then
-python3  tvm-compilation-onnx-example.py --pc-inference
-python3  tvm-compilation-tflite-example.py --pc-inference
-python3  tvm-compilation-onnx-example.py
-python3  tvm-compilation-tflite-example.py
+python3  tvm-compilation-onnx-example.py --pc-inference -p "$SOCKS_PROXY"
+python3  tvm-compilation-tflite-example.py --pc-inference -p "$SOCKS_PROXY"
+python3  tvm-compilation-onnx-example.py -p "$SOCKS_PROXY"
+python3  tvm-compilation-tflite-example.py -p "$SOCKS_PROXY"
 fi
 python3  dlr-inference-example.py 
 cd $CURDIR

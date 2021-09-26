@@ -8,14 +8,22 @@ parser.add_argument('--num_bits', dest='num_bits', default=8, choices=[8, 16, 32
 parser.add_argument('--num_subgraphs', dest='num_subgraphs_max', default=16, type=int, help='maximum number of TIDL subgraphs for offload (actual number of subgraphs may be less that this)')
 parser.add_argument('--pc-inference', dest='device', action='store_false', help='compile for inference on PC')
 parser.add_argument('--num_calib_images', dest='calib_iters', default=4, type=int, help='number of images to use for calibration')
+parser.add_argument('-p','--proxy', help='Proxy: socks5://host:port')
 args = parser.parse_args()
 
 models = {
     'mobilenetv2-1.0.onnx' : {'url':'https://git.ti.com/cgit/jacinto-ai/jacinto-ai-modelzoo/plain/models/vision/classification/imagenet1k/torchvision/mobilenet_v2_tv_opset9.onnx', 'dir':'../../../models/public/onnx/'}
- }
+}
+
+proxies = None
+if proxy:
+    proxies = {
+        "http": proxy,
+        "https": proxy,
+    }
 
 models_base_path = '../../../models/public/onnx/'
-download_models(models_base_path, models)
+download_models(models_base_path, models, proxies = proxies)
 
 # model specifics
 model_path = os.path.join(models_base_path, 'mobilenetv2-1.0.onnx')
