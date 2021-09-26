@@ -15,8 +15,10 @@ models = {
     'inception_v3.tflite' : {'url':'https://tfhub.dev/tensorflow/lite-model/inception_v3/1/default/1?lite-format=tflite', 'dir':'../../../models/public/tflite/'},
 }
 
+proxy = args.proxy
 proxies = None
 if proxy:
+    proxy = proxy.replace("socks5", "socks5h")
     proxies = {
         "http": proxy,
         "https": proxy,

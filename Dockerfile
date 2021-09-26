@@ -11,6 +11,16 @@ RUN apt-get install -y python3 python3-pip python3-setuptools
 # curl vim git wget gdb : needeed by baseline dev
 RUN apt install -y libsm6 libxext6 libxrender1 cmake libprotobuf-dev protobuf-compiler libprotoc-dev graphviz swig curl vim git wget gdb nano zip gcc-5 g++-5 pkg-config libgtk-3-dev
 
+# Set the working directory to /opt
+WORKDIR /opt
+COPY . /opt
+
+# Config volume for persistency data
+VOLUME ["/data"]
+
+# Setup tidl-tools
+RUN cd /opt && ./setup_with_proxy.sh
+
 # Copies your code file from your action repository to the filesystem path `/` of the container
 COPY entrypoint.sh /entrypoint.sh
 RUN  echo "#!/bin/bash" > /dev_entrypoint.sh

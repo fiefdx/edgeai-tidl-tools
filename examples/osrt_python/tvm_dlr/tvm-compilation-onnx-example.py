@@ -15,8 +15,10 @@ models = {
     'mobilenetv2-1.0.onnx' : {'url':'https://git.ti.com/cgit/jacinto-ai/jacinto-ai-modelzoo/plain/models/vision/classification/imagenet1k/torchvision/mobilenet_v2_tv_opset9.onnx', 'dir':'../../../models/public/onnx/'}
 }
 
+proxy = args.proxy
 proxies = None
 if proxy:
+    proxy = proxy.replace("socks5", "socks5h")
     proxies = {
         "http": proxy,
         "https": proxy,

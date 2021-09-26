@@ -32,9 +32,10 @@ idx = 0
 nthreads = 0
 run_count = 0
 
-proxy = args.proxy.replace("socks5", "socks5h")
+proxy = args.proxy
 proxies = None
 if proxy:
+    proxy = proxy.replace("socks5", "socks5h")
     proxies = {
         "http": proxy,
         "https": proxy,

@@ -30,7 +30,7 @@
 
 ######################################################################
 SCRIPTDIR=`pwd`
-SOCKS_PROXY=`cat ./configuration.json | python -c "import sys, json; print(json.loads(sys.stdin.read())['proxy'])"`
+SOCKS_PROXY=`cat ./configuration.json | python3 -c "import sys, json; print(json.loads(sys.stdin.read())['proxy'])"`
 
 function download_curl {
     url="$1"
