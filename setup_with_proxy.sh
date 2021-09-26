@@ -30,7 +30,20 @@
 
 ######################################################################
 SCRIPTDIR=`pwd`
-SOCKS_PROXY="socks5://10.0.169.238:7077"
+SOCKS_PROXY=`cat ./configuration.json | python -c "import sys, json; print(json.loads(sys.stdin.read())['proxy'])"`
+
+function download_curl {
+    url="$1"
+    file_name=$(basename $url)
+    echo "download $file_name"
+    curl --proxy "$SOCKS_PROXY" -L "$url" --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output "./$file_name"
+}
+
+function pip3_install {
+    file_name="$1"
+    echo "install $file_name"
+    pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com "$file_name"
+}
 
 
 skip_cpp_deps=0
@@ -86,22 +99,22 @@ fi
 echo 'Installing python packages...'
 if [[ $arch == x86_64 ]]; then
 pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r ./requirements_pc.txt
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/dlr-1.8.0-py3-none-any.whl' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./dlr-1.8.0-py3-none-any.whl
-pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com ./dlr-1.8.0-py3-none-any.whl
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tvm-0.8.dev0-cp36-cp36m-linux_x86_64.whl' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./tvm-0.8.dev0-cp36-cp36m-linux_x86_64.whl
-pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com ./tvm-0.8.dev0-cp36-cp36m-linux_x86_64.whl
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/onnxruntime_tidl-1.7.0-cp36-cp36m-linux_x86_64.whl' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./onnxruntime_tidl-1.7.0-cp36-cp36m-linux_x86_64.whl
-pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com ./onnxruntime_tidl-1.7.0-cp36-cp36m-linux_x86_64.whl
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tflite_runtime-2.4.0-py3-none-any.whl' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./tflite_runtime-2.4.0-py3-none-any.whl
-pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com ./tflite_runtime-2.4.0-py3-none-any.whl
+download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/dlr-1.8.0-py3-none-any.whl'
+pip3_install ./dlr-1.8.0-py3-none-any.whl
+download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tvm-0.8.dev0-cp36-cp36m-linux_x86_64.whl'
+pip3_install ./tvm-0.8.dev0-cp36-cp36m-linux_x86_64.whl
+download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/onnxruntime_tidl-1.7.0-cp36-cp36m-linux_x86_64.whl'
+pip3_install ./onnxruntime_tidl-1.7.0-cp36-cp36m-linux_x86_64.whl
+download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tflite_runtime-2.4.0-py3-none-any.whl'
+pip3_install ./tflite_runtime-2.4.0-py3-none-any.whl
 elif [[ $arch == aarch64 ]]; then
 pip3 install --index-url https://pypi.tuna.tsinghua.edu.cn/simple/  --trusted-host pypi.tuna.tsinghua.edu.cn -r ./requirements_j7.txt
 fi
+pip3 install --index-url http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -U requests[socks]
 
 if [[ -z "$TIDL_TOOLS_PATH" ]]
 then
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tidl_tools.tar.gz' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./tidl_tools.tar.gz
-# wget https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tidl_tools.tar.gz
+download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc1/tidl_tools.tar.gz'
 tar -xzf tidl_tools.tar.gz
 rm tidl_tools.tar.gz
 cd  tidl_tools
@@ -113,10 +126,8 @@ if [ $skip_cpp_deps -eq 0 ]
 then
 if [[ $arch == x86_64 ]]; then
     cd  $TIDL_TOOLS_PATH
-    curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libonnxruntime.so.1.7.0' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./libonnxruntime.so.1.7.0
-    # wget https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libonnxruntime.so.1.7.0
-    curl --proxy "$SOCKS_PROXY" -L 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libtensorflow-lite.a' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./libtensorflow-lite.a
-    # wget https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libtensorflow-lite.a
+    download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libonnxruntime.so.1.7.0'
+    download_curl 'https://github.com/TexasInstruments/edgeai-tidl-tools/releases/download/08.00.00-rc2/libtensorflow-lite.a'
     ln -s libonnxruntime.so.1.7.0 libonnxruntime.so
     cd -
 fi
@@ -130,8 +141,7 @@ fi
 
 if [ $skip_arm_gcc_download -eq 0 ]
 then
-curl --proxy "$SOCKS_PROXY" -L 'https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz
-# wget https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz
+download_curl 'https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz'
 tar -xf gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz
 export ARM64_GCC_PATH=$(pwd)/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu
 fi
@@ -139,19 +149,28 @@ fi
 if [ $skip_cpp_deps -eq 0 ]
 then
 cd $HOME
-git clone --depth 1 --single-branch -b tidl-j7 https://github.com/TexasInstruments/neo-ai-dlr
+git config --global http.proxy "$SOCKS_PROXY"
+if [ -d "$HOME/neo-ai-dlr" ]; then
+    rm -rf "$HOME/neo-ai-dlr"
+fi
+git clone --depth 1 --single-branch -b tidl-j7 https://github.com/TexasInstruments/neo-ai-dlr.git
+if [ -d "$HOME/onnxruntime" ]; then
+    rm -rf "$HOME/onnxruntime"
+fi
 git clone --depth 1 --single-branch -b tidl-j7 https://github.com/TexasInstruments/onnxruntime.git
+if [ -d "$HOME/tensorflow" ]; then
+    rm -rf "$HOME/tensorflow"
+fi
 git clone --depth 1 --single-branch -b tidl-j7 https://github.com/TexasInstruments/tensorflow.git
+git config --global --unset http.proxy
 mkdir -p tensorflow/tensorflow/lite/tools/make/downloads
 cd tensorflow/tensorflow/lite/tools/make/downloads
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./v1.12.0.tar.gz
-# wget https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz
+download_curl 'https://github.com/google/flatbuffers/archive/v1.12.0.tar.gz'
 tar -xzf v1.12.0.tar.gz
 rm v1.12.0.tar.gz
 mv  flatbuffers-1.12.0 flatbuffers
 cd -
-curl --proxy "$SOCKS_PROXY" -L 'https://github.com/opencv/opencv/archive/4.1.0.zip' --connect-timeout 120 --max-time 600 --retry 10 --retry-delay 5 --retry-max-time 60 --output ./4.1.0.zip
-# wget https://github.com/opencv/opencv/archive/4.1.0.zip
+download_curl 'https://github.com/opencv/opencv/archive/4.1.0.zip'
 unzip 4.1.0.zip
 rm 4.1.0.zip
 if [[ $arch == x86_64 ]]; then
@@ -163,9 +182,3 @@ fi
 fi
 
 cd $SCRIPTDIR
-
-
-
-
-
-
